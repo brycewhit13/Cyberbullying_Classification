@@ -1,0 +1,571 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whitney_Final_Data410</title>
+  <link rel="stylesheet" href="https://stackedit.io/style.css" />
+</head>
+
+<body class="stackedit">
+  <div class="stackedit__html"><h1 id="twitter-cyberbullying-classification">Twitter Cyberbullying Classification</h1>
+<h1 id="introduction">Introduction</h1>
+<p>The popularity of social media continues to grow every year, with more and more people spending their spare time on sites such as Instagram, Facebook, Twitter, and Snapchat. Social media is quickly becoming an integral part of many people’s lives: it allows people to stay connected anywhere on the globe, can serve as a news source for people to keep up to date, and provides a platform for people to express themselves and their interests that may not have been available otherwise. Unfortunately, this rise in social media has also brought a rise in cyberbullying along with it. The anonymity of users on social media greatly decreases the likelihood of consequences for bullying others, making cyberbullying a far too common occurrence online. The COVID-19 pandemic has made this problem even worse, as many schools are being forced to operate online. This means children have no choice but to be online for the majority of the day, greatly increasing the likelihood they have to deal with cyberbullying. According to UNICEF, 36.5% of middle schoolers have been a victim of cyberbullying, and an astronomical 87% have observed cyberbullying at some point (Wang et al., 2020).</p>
+<p>Cyberbullying can have seriously negative effects on the victims, ranging from decreased academic performance to depression and suicidal thoughts. However, cyberbullying is far more difficult to combat than traditional bullying due to the anonymity of online users, and the fact that it can happen anywhere and anytime throughout the day. For this reason, I am researching the effectiveness of different machine learning algorithms at identifying cyberbullying on social media platforms. This could lead to a real-time classification model that automatically identifies cyberbullying messages online, and ensures they are never sent to the victim in the first place.</p>
+<h2 id="data-description">Data Description</h2>
+<p>For the research I used the <a href="https://www.kaggle.com/datasets/andrewmvd/cyberbullying-classification">Cyberbullying Classification</a> dataset from Kaggle. This data set contains 47,656 tweets where each tweet has been labeled as either cyberbullying or not cyberbullying. The cyberbullying tweets are categorized even further to identify the specific type of cyberbullying. This results in six classes of cyberbullying, where every tweet belongs to one of the following:</p>
+<ul>
+<li>Age</li>
+<li>Ethnicity</li>
+<li>Gender</li>
+<li>Religion</li>
+<li>Other Cyberbullying</li>
+<li>Not Cyberbullying</li>
+</ul>
+<p>Each of these tweets either describes an event of cyberbullying or is the offense itself. The data has been balanced to ensure each class of cyberbullying has approximately 8,000 observations. The breakdown is as follows:</p>
+<ul>
+<li>Age: 7,992</li>
+<li>Ethnicity: 7,959</li>
+<li>Gender: 7,948</li>
+<li>Religion: 7,997</li>
+<li>Other Cyberbullying: 7,937</li>
+<li>Not Cyberbullying: 7,823</li>
+</ul>
+<p>That means there are 39,719 total tweets of cyberbullying and 7,937 tweets that are not cyberbullying. 5 examples were chosen from the data to showcase how the data is structured:</p>
+
+<table>
+<thead>
+<tr>
+<th>tweet_text</th>
+<th>cyberbullying_type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>In other words #katandandre, your food was cra…</td>
+<td>not_cyberbullying</td>
+</tr>
+<tr>
+<td>@Jason_Gio meh. :P thanks for the heads up, b…</td>
+<td>not_cyberbullying</td>
+</tr>
+<tr>
+<td>Black ppl aren’t expected to do anything, depe…</td>
+<td>ethnicity</td>
+</tr>
+<tr>
+<td>@Delenafan23 a bully is bullying one of my bff…</td>
+<td>gender</td>
+</tr>
+<tr>
+<td>anna has been reciting the “wedding vows of th…</td>
+<td>age</td>
+</tr>
+</tbody>
+</table><p>The length of the tweets is variable, with the shortest tweet being 1 character long and the longest tweet being 5018 characters long. For the majority of the observations, the length of the tweets does not exceed a couple hundred characters. Below are a couple statistics to get a better sense of the distribution for tweet lengths within the data set.</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Metric</th>
+<th align="left">Measure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">Shortest tweet</td>
+<td align="left">1 character</td>
+</tr>
+<tr>
+<td align="left">First quartile</td>
+<td align="left">78 characters</td>
+</tr>
+<tr>
+<td align="left">Average tweet length</td>
+<td align="left">136 characters</td>
+</tr>
+<tr>
+<td align="left">Median tweet length</td>
+<td align="left">124 characters</td>
+</tr>
+<tr>
+<td align="left">Third quartile</td>
+<td align="left">180 characters</td>
+</tr>
+<tr>
+<td align="left">Longest tweet</td>
+<td align="left">5018 characters</td>
+</tr>
+<tr>
+<td align="left"># of tweets &lt; 10 characters</td>
+<td align="left">91 tweets</td>
+</tr>
+<tr>
+<td align="left"># of tweets &gt; 1000 characters</td>
+<td align="left">13 tweets</td>
+</tr>
+</tbody>
+</table><h2 id="preprocessing">Preprocessing</h2>
+<p>Data preprocessing is one of the most important steps when working with text data. The unstructured nature makes it very difficult to use right away, requiring extensive preparation before it can be used in machine learning models. Lazy and poor preprocessing will almost certainly generate poor results regardless of how sophisticated and effective the classification algorithm being used is. I performed both standard and twitter-specific NLP preprocessing techniques to ensure I could get the best results possible.</p>
+<h3 id="removing-punctuation-and-special-characters">Removing Punctuation and Special Characters</h3>
+<p>The first thing I did was remove punctuation and special characters from the tweets. This is because they do not typically add any meaning to sentences, and thus would not help the accuraccy of classification alorithms. All punctuation and special characters were replaced with empty strings by using the <code>sub()</code> method from the <code>regex</code> library.   <code>#</code> and <code>@</code> characters were not removed at this time and were handled later with the twitter-specific preprocessing.</p>
+<pre class=" language-python"><code class="prism  language-python">tweet <span class="token operator">=</span> re<span class="token punctuation">.</span>sub<span class="token punctuation">(</span><span class="token string">'[^#@a-zA-Z0-9 ]'</span><span class="token punctuation">,</span><span class="token string">''</span><span class="token punctuation">,</span>tweet<span class="token punctuation">)</span><span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Every tweet was also converted to lowercase using the <code>string.lower()</code> method. Again, this was done because the meaning of a sentence does not change depending on whether letters are lowercase of capitalized. Tweets could be converted to all uppercase or all lowercase, but not choosing would result in lots of unnecessary information for models to keep track of and likely hinder the classification success.</p>
+<h3 id="removing-stopwords">Removing Stopwords</h3>
+<p>Stopwords refer to commonly used words that do not add signifcant meaning to sentences. There is no universal list of English stopwords, but I used the standard list from <code>nltk</code>. Examples of some stopwords are <code>of</code>, <code>the</code>, <code>is</code>, and <code>are</code>. It is considered standard to remove stopwords before conducting any analysis in NLP, and has been shown to improve results on countless occasions. Any word that appeared in the set of stopwords was simply removed from the data.</p>
+<h3 id="stemming">Stemming</h3>
+<p>Stemming refers to the NLP process that reduces words to their root form. For example, take the three words <code>stop, stopping, and stopped</code>. The usage of any given word showcases the tense where the action takes place (present, past, future, etc.), but the meaning of the word doesn’t really change. For this reason, it can be very helpful in text preprocessing to only keep the root word in the data, as the computer only needs to determine the meaning of one word (the root word) instead of tracking the meaning for every conjugation of the word. In the example above, all three words would show up as <code>stop</code> in the data after stemming.</p>
+<p>In python, stemming can be easily accomplished using the <code>PorterStemmer()</code> from the <code>nltk</code> library. When cleaning the data, every word that isn’t removed is stemmed to its root word before any analysis is conducted.</p>
+<h3 id="fixing-spelling-mistakes">Fixing Spelling Mistakes</h3>
+<p>The <code>autocorrect</code> library provides the <code>Speller()</code> object which allows us to fix spelling mistakes in the same way autocorrect works for smartphones. The speller takes any string as an argument and returns the best guess for how the word should be spelled. If there is no spelling error, the same string is returned.</p>
+<p>Lets take the following code as an example. if we pass the word <em>Chikn</em> to the speller, it will return <em>Chicken</em>, which is probably what the user meant in most cases. However, like any autocorrecting process, it needs to make assumptions about what the user wanted to write, and may ultimately return the wrong word. If we pass <em>fauct</em> to the speller, it is unclear whether the user meant to write <em>fact</em> or <em>faucet</em>, as each of these are off by one letter. In this case the speller returns <em>fact</em>, but it is important to recognize it will not always be correct. Through some manual testing, the speller appears to be sufficiently accurate to improve classification results.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">from</span> autocorrect <span class="token keyword">import</span> Speller
+spell <span class="token operator">=</span> Speller<span class="token punctuation">(</span>lang<span class="token operator">=</span><span class="token string">'en'</span><span class="token punctuation">)</span>
+spell<span class="token punctuation">(</span><span class="token string">'Chiken'</span><span class="token punctuation">)</span> <span class="token comment"># Returns Chicken</span>
+spell<span class="token punctuation">(</span><span class="token string">'fauct'</span><span class="token punctuation">)</span> <span class="token comment"># Returns fact</span>
+spell<span class="token punctuation">(</span><span class="token string">'faucet'</span><span class="token punctuation">)</span> <span class="token comment"># Return faucet</span>
+</code></pre>
+<p>It is important that this is done before the word is stemmed. In many cases stemming results in a word that is an English root word, but this is not always the case. There are some cases where the “root word” is not an actual word in English. This is not an issue for the computer as it doesn’t have any preconceived notion of English words, but it would create a massive issue when fixing spelling mistakes. The speller would likely alter the spelling to a word that has a completely different meaning than the original one did. However, when the spelling is fixed before stemming, it can fix any typos (which are very present in twitter data) and possibly result in more accurate stems throughout the data.</p>
+<h3 id="removing-hashtags-and-twitter-handles">Removing Hashtags and Twitter Handles</h3>
+<p>For anyone who has never used twitter, hashtags and twitter handles are often included in tweets. Hashtags always begin with <code>#</code> and handles always begin with <code>@</code>. These make twitter more functional, as hashtags allow you to find posts with similar content and twitter handles allow you to tag someone directly in your tweet for them to see, but they do not add significant meaning to tweets. For this reason I decided to remove hashtags and twitter handles entirely. Any word that began with <code>#</code> or <code>@</code> was removed from the dataset.</p>
+<p>The code required to complete all the preprocessing, including the necessary libraries and the <code>cleanData()</code> function, is shown below.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">import</span> re
+<span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">import</span> nltk
+<span class="token keyword">from</span> nltk<span class="token punctuation">.</span>corpus <span class="token keyword">import</span> stopwords
+<span class="token keyword">from</span> nltk<span class="token punctuation">.</span>stem<span class="token punctuation">.</span>porter <span class="token keyword">import</span> PorterStemmer
+<span class="token keyword">from</span> autocorrect <span class="token keyword">import</span> Speller
+nltk<span class="token punctuation">.</span>download<span class="token punctuation">(</span><span class="token string">'stopwords'</span><span class="token punctuation">)</span>
+</code></pre>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">cleanData</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    cleanedTweets <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    stemmer <span class="token operator">=</span> PorterStemmer<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment"># Stemming</span>
+    spell <span class="token operator">=</span> Speller<span class="token punctuation">(</span>lang<span class="token operator">=</span><span class="token string">'en'</span><span class="token punctuation">)</span> <span class="token comment"># Autocorrect Spelling mistakes</span>
+    <span class="token comment"># Loop through all tweets</span>
+    <span class="token keyword">for</span> tweet <span class="token keyword">in</span> data<span class="token punctuation">:</span>
+        <span class="token comment"># Remove punctuation and special characters, keep hashtags and tags</span>
+        tweet <span class="token operator">=</span> re<span class="token punctuation">.</span>sub<span class="token punctuation">(</span><span class="token string">'[^#@a-zA-Z0-9 ]'</span><span class="token punctuation">,</span><span class="token string">''</span><span class="token punctuation">,</span>tweet<span class="token punctuation">)</span><span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token comment"># Tokenize the sentences, remove stopwords and stem others</span>
+        tweet <span class="token operator">=</span> tweet<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        tweet <span class="token operator">=</span> <span class="token punctuation">[</span>stemmer<span class="token punctuation">.</span>stem<span class="token punctuation">(</span>spell<span class="token punctuation">(</span>word<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">for</span> word <span class="token keyword">in</span> tweet <span class="token keyword">if</span> word <span class="token operator">not</span> <span class="token keyword">in</span> <span class="token builtin">set</span><span class="token punctuation">(</span>stopwords<span class="token punctuation">.</span>words<span class="token punctuation">(</span><span class="token string">'english'</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">and</span> word<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">!=</span> <span class="token string">'#'</span> <span class="token operator">and</span> word<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">!=</span> <span class="token string">'@'</span><span class="token punctuation">]</span>
+
+        <span class="token comment"># Append to cleaned tweets</span>
+        cleanedTweets<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string">' '</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>tweet<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        
+    <span class="token comment"># Return cleaned tweets</span>
+    <span class="token keyword">return</span> cleanedTweets
+</code></pre>
+<h3 id="creating-the-datasets">Creating the Datasets</h3>
+<p>For this research I decided to do both binary classification and multiclass classification. For the binary case, the <em>age, ethnicity, gender, religion,</em> and <em>other</em> classes were merged into one <em>cyberbullying</em> class. This resulted in two datasets, <code>binaryData</code> and <code>multiclassData</code>, that were used for binary classification and multiclass classification respectively.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Load the Data</span>
+multiclassData <span class="token operator">=</span> pd<span class="token punctuation">.</span>read_csv<span class="token punctuation">(</span><span class="token string">'Data/cyberbullying_tweets.csv'</span><span class="token punctuation">)</span><span class="token punctuation">.</span>drop_duplicates<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>dropna<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Clean the data</span>
+multiclassData<span class="token punctuation">[</span><span class="token string">'cleanTweets'</span><span class="token punctuation">]</span> <span class="token operator">=</span> cleanData<span class="token punctuation">(</span>multiclassData<span class="token punctuation">[</span><span class="token string">'tweet_text'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Convert to binary classes</span>
+binaryData <span class="token operator">=</span> multiclassData<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+binaryData<span class="token punctuation">[</span><span class="token string">'cyberbullying_type'</span><span class="token punctuation">]</span> <span class="token operator">=</span> binaryData<span class="token punctuation">[</span><span class="token string">'cyberbullying_type'</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> x <span class="token keyword">if</span> x<span class="token operator">==</span><span class="token string">'not_cyberbullying'</span> <span class="token keyword">else</span> <span class="token string">'cyberbullying'</span><span class="token punctuation">)</span>
+</code></pre>
+<p>Once the datasets were cleaned and ready for analysis, they were saved to csv files so they could be loaded in directly in the future. This does not impact the analysis or results, but was useful as the preprocessing took a while and only needed to be completed once.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Save to CSV files</span>
+multiclassData<span class="token punctuation">.</span>to_csv<span class="token punctuation">(</span><span class="token string">'Data/cleanedMulticlass_spelled.csv'</span><span class="token punctuation">,</span> columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'tweet_text'</span><span class="token punctuation">,</span> <span class="token string">'cleanTweets'</span><span class="token punctuation">,</span> <span class="token string">'cyberbullying_type'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+binaryData<span class="token punctuation">.</span>to_csv<span class="token punctuation">(</span><span class="token string">'Data/cleanedBinaryData_spelled.csv'</span><span class="token punctuation">,</span> columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'tweet_text'</span><span class="token punctuation">,</span> <span class="token string">'cleanTweets'</span><span class="token punctuation">,</span> <span class="token string">'cyberbullying_type'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+</code></pre>
+<h2 id="measuring-model-effectiveness">Measuring Model Effectiveness</h2>
+<p>For each model I performed a stratified cross-validation to obtain more robust results from each method. The data was originally organized by category, so I decided to shuffle the data, with a random state of 410, to ensure the categories were spread out throughout the data. 5 splits were used for cross-validation.</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token comment"># Set up Stratified KFold</span>
+kf <span class="token operator">=</span> StratifiedKFold<span class="token punctuation">(</span>n_splits <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">,</span> shuffle <span class="token operator">=</span> <span class="token boolean">True</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">410</span><span class="token punctuation">)</span>
+x <span class="token operator">=</span> binaryData<span class="token punctuation">[</span><span class="token string">'cleanTweets'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>values
+y <span class="token operator">=</span> binaryData<span class="token punctuation">[</span><span class="token string">'cyberbullying_type'</span><span class="token punctuation">]</span><span class="token punctuation">.</span>values
+</code></pre>
+<p>The average classification accuracy and confusion matrix were printed for each method. The accuracy summarizes the percentage of correct classifications made each time, while the confusion matrix gives a more detailed look of which classes were being accurately classified and which were being confused with others. This is particularly important for the multiclass analysis. I will always check if the model performed better than guessing the majority class every time. In the binary case that is 83.34% accuracy, and in the multi-class classification case that is 16.77% accuracy.</p>
+<h1 id="word-embedding-methods">Word Embedding Methods</h1>
+<h2 id="tf-idf">TF-IDF</h2>
+<p>TF-IDF can be broken into two distinct parts: <em>term frequency (TF)</em> and <em>inverse document frequency (IDF)</em>.</p>
+<p><strong>Term Frequency</strong>: Measures how often each word appears in the data. This is typically just a raw count of how often it appears, but other factors such as the length of the document or a logarithmic scale can be considered. This research only uses the raw count.<br>
+<strong>Inverse Document Frequency</strong>: Factors in how often a word appears in the data compared to other words. This represents how common or uncommon the word is. It is calculated with the following equation:</p>
+<p><span class="katex--display"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>i</mi><mi>d</mi><mi>f</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mi>l</mi><mi>o</mi><mi>g</mi><mo stretchy="false">(</mo><mfrac><mrow><mi>N</mi><mo>+</mo><mn>1</mn></mrow><mrow><mi>d</mi><mi>f</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>+</mo><mn>1</mn></mrow></mfrac><mo stretchy="false">)</mo><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">idf(t) = log(\frac{N + 1}{df(t) + 1}) + 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord mathnormal">i</span><span class="mord mathnormal" style="margin-right: 0.10764em;">df</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mspace" style="margin-right: 0.277778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.277778em;"></span></span><span class="base"><span class="strut" style="height: 2.29633em; vertical-align: -0.936em;"></span><span class="mord mathnormal" style="margin-right: 0.01968em;">l</span><span class="mord mathnormal">o</span><span class="mord mathnormal" style="margin-right: 0.03588em;">g</span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 1.36033em;"><span class="" style="top: -2.314em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.10764em;">df</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mord">1</span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line" style="border-bottom-width: 0.04em;"></span></span><span class="" style="top: -3.677em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.10903em;">N</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.936em;"><span class=""></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span><span class="mspace" style="margin-right: 0.222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.222222em;"></span></span><span class="base"><span class="strut" style="height: 0.64444em; vertical-align: 0em;"></span><span class="mord">1</span></span></span></span></span></span><br>
+Where:<br>
+<strong>t</strong>: Word of interest<br>
+<strong>N</strong>: # of documents in the corpus<br>
+<strong>df(t)</strong>: # of documents where <em>t</em> appears</p>
+<p>1 is added to the numerator and denominator to ensure nothing weird happens with division by zero if the word doesn’t appear in any documents.</p>
+<p>The TF-IDF can be calculated by simply multiplying the two components together. It is designed to measure how important or relevant a word is, and can be passed into machine learning models to aid text classification.</p>
+<h2 id="word2vec">Word2Vec</h2>
+<p>Word2Vec is a word embedding where each word is assigned a vector. The goal of Word2Vec is to give similar words vectors that are close in space. With enough training data, word embeddings can be added and subtracted with each other to reach new embeddings for words that result from the logic. For example:</p>
+<p><strong>Vec['King] - Vec[‘Man’] + Vec[‘Woman’] = Vec[‘Queen’]</strong><br>
+<strong>Vec[‘Paris’] + Vec[‘Italy’] - Vec[‘France’] = Vec[‘Rome’]</strong></p>
+<p>This research used the continuous bag of words architecture for the Word2Vec model. There are two options: continuous bag of words architecture and skip-gram architecture, which are described in more detail with the fastText embedding.</p>
+<p>After fitting the Word2Vec model, the training and testing data needs to be reformatted so it can be passed to the machine learning models. This is the function that completes the reformatting (also used for fastText):</p>
+<pre class=" language-python"><code class="prism  language-python"><span class="token keyword">def</span> <span class="token function">formatW2V_Vectors</span><span class="token punctuation">(</span>Xtrain<span class="token punctuation">,</span> Xtest<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    Xtrain_vect_avg <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    Xtest_vect_avg <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> v <span class="token keyword">in</span> Xtrain<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> v<span class="token punctuation">.</span>size<span class="token punctuation">:</span>
+            Xtrain_vect_avg<span class="token punctuation">.</span>append<span class="token punctuation">(</span>v<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>axis<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            Xtrain_vect_avg<span class="token punctuation">.</span>append<span class="token punctuation">(</span>np<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span><span class="token builtin">float</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">for</span> v <span class="token keyword">in</span> Xtest<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> v<span class="token punctuation">.</span>size<span class="token punctuation">:</span>
+            Xtest_vect_avg<span class="token punctuation">.</span>append<span class="token punctuation">(</span>v<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>axis<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">else</span><span class="token punctuation">:</span>
+            Xtest_vect_avg<span class="token punctuation">.</span>append<span class="token punctuation">(</span>np<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span><span class="token builtin">float</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            
+    <span class="token keyword">return</span> Xtrain_vect_avg<span class="token punctuation">,</span> Xtest_vect_avg
+</code></pre>
+<h2 id="fasttext">FastText</h2>
+<p>FastText is another library in python that embeds words in a similar manner as Word2Vec. It seeks to give similar words nearby vectors in space, and supports the addition and subtraction of vectors the same way Word2Vec does. Again, there are two possible architectures, continuous bag of words (CBOW) and skip gram.</p>
+<p>The CBOW architecture looks at the vectors of surrounding (context) words and combines them to predict the word in the middle (the input word). On the contrary, the skip-gram architecture looks at the vector representation of the input word and uses it to predict the embeddings of context words. These two methods both seek to understand the underlying meaning of words and represent them as vectors, but they <strong>accomplish this goal using opposite operations</strong>. They both use underlying neural networks to complete this task, and thus an iterative process to improve the vector embeddings each propagation cycle. <strong>Both of these architectures were used in this research to see if one clearly outperformed another</strong></p>
+<h1 id="binary-classification">Binary Classification</h1>
+<p>For every embedding and model combination, a 5-fold stratified cross-validation was run, and the model accuracy and confusion matrix were extracted for each. An example from the TF-IDF embedding and K-Nearest Neighbors model is shown below.</p>
+<pre class=" language-python"><code class="prism  language-python">vectorizer <span class="token operator">=</span> TfidfVectorizer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model <span class="token operator">=</span> KNeighborsClassifier<span class="token punctuation">(</span><span class="token punctuation">)</span>
+accuracy <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+conf_mat <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> idxTrain<span class="token punctuation">,</span> idxTest <span class="token keyword">in</span> kf<span class="token punctuation">.</span>split<span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Split into train and test splits</span>
+    Xtrain<span class="token punctuation">,</span> Xtest <span class="token operator">=</span> x<span class="token punctuation">[</span>idxTrain<span class="token punctuation">]</span><span class="token punctuation">,</span> x<span class="token punctuation">[</span>idxTest<span class="token punctuation">]</span>
+    ytrain<span class="token punctuation">,</span> ytest <span class="token operator">=</span> y<span class="token punctuation">[</span>idxTrain<span class="token punctuation">]</span><span class="token punctuation">,</span> y<span class="token punctuation">[</span>idxTest<span class="token punctuation">]</span>
+    
+    <span class="token comment"># TF-IDF Vectorizor</span>
+    Xtrain <span class="token operator">=</span> vectorizer<span class="token punctuation">.</span>fit_transform<span class="token punctuation">(</span>Xtrain<span class="token punctuation">)</span>
+    Xtest <span class="token operator">=</span> vectorizer<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>Xtest<span class="token punctuation">)</span>
+    
+    <span class="token comment"># Check Accuracy</span>
+    model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>Xtrain<span class="token punctuation">,</span> ytrain<span class="token punctuation">)</span>
+    ypred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>Xtest<span class="token punctuation">)</span>
+    accuracy<span class="token punctuation">.</span>append<span class="token punctuation">(</span>accuracy_score<span class="token punctuation">(</span>ytest<span class="token punctuation">,</span> ypred<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Add to confusion matrix</span>
+    confusion <span class="token operator">=</span> confusion_matrix<span class="token punctuation">(</span>ytest<span class="token punctuation">,</span> ypred<span class="token punctuation">,</span> labels<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'cyberbullying'</span><span class="token punctuation">,</span> <span class="token string">'not_cyberbullying'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    conf_mat <span class="token operator">=</span> add_to_confusion<span class="token punctuation">(</span>conf_mat<span class="token punctuation">,</span> confusion<span class="token punctuation">)</span>
+
+print_confusion_matrix<span class="token punctuation">(</span>conf_mat<span class="token punctuation">)</span>    
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Average Accuracy: '</span><span class="token punctuation">,</span> np<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>accuracy<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<h2 id="accuracy">Accuracy</h2>
+<p>Below are the accuracies for each embedding technique and model combination for the binary classification problem. The accuracy represents the percentage of time that the correct class was predicted by the model.</p>
+
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>TF-IDF Accuracy</th>
+<th>Word2Vec Accuracy</th>
+<th>CBOW fastText Accuracy</th>
+<th>Skip-Gram fastText Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K-Nearest Neighbors</td>
+<td>60.59%</td>
+<td>83.89%</td>
+<td>83.28%</td>
+<td><strong>85.21%</strong></td>
+</tr>
+<tr>
+<td>Logistic Regression</td>
+<td><strong>86.07%</strong></td>
+<td>83.91%</td>
+<td>84.43%</td>
+<td>85.31%</td>
+</tr>
+<tr>
+<td>Random Forest</td>
+<td><strong>84.15%</strong></td>
+<td>83.20%</td>
+<td>82.85%</td>
+<td>83.77%</td>
+</tr>
+<tr>
+<td>Support Vector Machine</td>
+<td>83.42%</td>
+<td>83.42%</td>
+<td>83.89%</td>
+<td><strong>84.68%</strong></td>
+</tr>
+</tbody>
+</table><p>The TF-IDF and the skip-gram fastText embeddings appear to be the most effective word embeddings. I would argue the skip-gram embedding is slightly better since it has one of the top-2 accuracies for every model. In general, the models only performed a couple of percentage points better than if they randomly guessed the majority class every time (83.34%). In some cases it even performed slightly worse, especially the KNN model. This makes sense for the TF-IDF embedding because it does not attempt to encode words with similar meanings closer to each other. The accuracies give a good indication on how the model may be performing, but it is important to look at confusion matrices for a more thorough understanding.</p>
+<h2 id="confusion-matrices">Confusion Matrices</h2>
+<p>For the confusion matrix below I have simplified the <code>Cyberbullying</code> class to <code>C</code> and <code>Not Cyberbullying</code> class to <code>NC</code>. The left side of the table shows what the true label was, and the columns show what the predicted label was. This allows us to see how many correct prediction and incorrect prediction of each class there were, and any other patterns that may be important.</p>
+<h3 id="tf-idf-confusion-matrix">TF-IDF Confusion Matrix</h3>
+<table>
+    <thead>
+        <tr>
+            <th colspan="1"></th>
+            <th colspan="2">KNN</th>
+            <th colspan="2">Log. Reg.</th>
+            <th colspan="2">RF</th>
+            <th colspan="2">SVC</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+	        <td rowspan="1"></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+        </tr>
+        <tr>
+            <td colspan="1"><b>C</b></td>
+            <td colspan="1">5088</td>
+            <td colspan="1">2829</td>
+            <td colspan="1">7690</td>
+            <td colspan="1">227</td>
+            <td colspan="1">7459</td>
+            <td colspan="1">458</td>
+            <td colspan="1">7918</td>
+            <td colspan="1">0</td>
+        </tr>
+        <tr>
+            <td><b>NC</b></td>
+            <td colspan="1">911</td>
+            <td colspan="1">662</td>
+            <td colspan="1">1094</td>
+            <td colspan="1">479</td>
+            <td colspan="1">1045</td>
+            <td colspan="1">528</td>
+            <td colspan="1">1573</td>
+            <td colspan="1">0</td>
+        </tr>
+    </tbody>
+</table>
+<h3 id="word2vec-confusion-matrix">Word2Vec Confusion Matrix</h3>
+<table>
+    <thead>
+        <tr>
+            <th colspan="1"></th>
+            <th colspan="2">KNN</th>
+            <th colspan="2">Log. Reg.</th>
+            <th colspan="2">RF</th>
+            <th colspan="2">SVC</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+	        <td rowspan="1"></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+        </tr>
+        <tr>
+            <td colspan="1"><b>C</b></td>
+            <td colspan="1">7486</td>
+            <td colspan="1">431</td>
+            <td colspan="1">7729</td>
+            <td colspan="1">188</td>
+            <td colspan="1">7496</td>
+            <td colspan="1">421</td>
+            <td colspan="1">7918</td>
+            <td colspan="1">0</td>
+        </tr>
+        <tr>
+            <td><b>NC</b></td>
+            <td colspan="1">1097</td>
+            <td colspan="1">476</td>
+            <td colspan="1">1338</td>
+            <td colspan="1">235</td>
+            <td colspan="1">1173</td>
+            <td colspan="1">400</td>
+            <td colspan="1">1573</td>
+            <td colspan="1">0</td>
+        </tr>
+    </tbody>
+</table>
+<h3 id="cbow-fasttext-confusion-matrix">CBOW fastText Confusion Matrix</h3>
+<table>
+    <thead>
+        <tr>
+            <th colspan="1"></th>
+            <th colspan="2">KNN</th>
+            <th colspan="2">Log. Reg.</th>
+            <th colspan="2">RF</th>
+            <th colspan="2">SVC</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+	        <td rowspan="1"></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+        </tr>
+        <tr>
+            <td colspan="1"><b>C</b></td>
+            <td colspan="1">7507</td>
+            <td colspan="1">410</td>
+            <td colspan="1">7740</td>
+            <td colspan="1">177</td>
+            <td colspan="1">7487</td>
+            <td colspan="1">430</td>
+            <td colspan="1">7917</td>
+            <td colspan="1">0</td>
+        </tr>
+        <tr>
+            <td><b>NC</b></td>
+            <td colspan="1">1177</td>
+            <td colspan="1">396</td>
+            <td colspan="1">1300</td>
+            <td colspan="1">273</td>
+            <td colspan="1">1197</td>
+            <td colspan="1">376</td>
+            <td colspan="1">1527</td>
+            <td colspan="1">46</td>
+        </tr>
+    </tbody>
+</table>
+<h3 id="skip-gram-fasttext-confusion-matrix">Skip-gram fastText Confusion Matrix</h3>
+<table>
+    <thead>
+        <tr>
+            <th colspan="1"></th>
+            <th colspan="2">KNN</th>
+            <th colspan="2">Log. Reg.</th>
+            <th colspan="2">RF</th>
+            <th colspan="2">SVC</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+	        <td rowspan="1"></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+            <td rowspan="1"><b>C</b></td>
+            <td rowspan="1"><b>NC </b></td>
+        </tr>
+        <tr>
+            <td colspan="1"><b>C</b></td>
+            <td colspan="1">7643</td>
+            <td colspan="1">274</td>
+            <td colspan="1">7674</td>
+            <td colspan="1">243</td>
+            <td colspan="1">7534</td>
+            <td colspan="1">383</td>
+            <td colspan="1">7904</td>
+            <td colspan="1">13</td>
+        </tr>
+        <tr>
+            <td><b>NC</b></td>
+            <td colspan="1">1129</td>
+            <td colspan="1">444</td>
+            <td colspan="1">1151</td>
+            <td colspan="1">422</td>
+            <td colspan="1">1157</td>
+            <td colspan="1">416</td>
+            <td colspan="1">1440</td>
+            <td colspan="1">133</td>
+        </tr>
+    </tbody>
+</table>
+<p>The first thing to notice is that despite it’s relatively competitive accuracies, the Support Vector Machine was an extremely poor classifier. With the exception of the fastText embedding, it simply guessed that every observation was cyberbullying (the majority class). This would obviously not be effective classifier in practice.</p>
+<p>In general, the models tended to misclassify non-cyberbullying observations more than they got it right. This could be due to the class imbalances and would be interesting to explore in the future. It could also stem from the combination of 5 specific categories into the general <code>Cyberbullying</code> class to create the binary classification. This may make the data in the class extremely broad and more difficult to differentiate from the <code>Not Cyberbullying</code> than if they were distinct. This will be analyzed in the multiclass classification problem. <strong>Overall, the skip-gram fastText model was the most effective embedding algorithm</strong>, as it limited incorrect classifications compared to the other methods and enabled the Support Vector Machine to get correct classifications for both classes.</p>
+<h1 id="multiclass-classification">Multiclass Classification</h1>
+<p>For every embedding and model combination, a 5-fold stratified cross-validation was run, and the model accuracy and confusion matrix were extracted for each. An example from the TF-IDF embedding and K-Nearest Neighbors model is shown below.</p>
+<pre class=" language-python"><code class="prism  language-python">vectorizer <span class="token operator">=</span> TfidfVectorizer<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model <span class="token operator">=</span> KNeighborsClassifier<span class="token punctuation">(</span><span class="token punctuation">)</span>
+accuracy <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+conf_mat <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">*</span><span class="token number">6</span> <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> idxTrain<span class="token punctuation">,</span> idxTest <span class="token keyword">in</span> kf<span class="token punctuation">.</span>split<span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Split into train and test splits</span>
+    Xtrain<span class="token punctuation">,</span> Xtest <span class="token operator">=</span> x<span class="token punctuation">[</span>idxTrain<span class="token punctuation">]</span><span class="token punctuation">,</span> x<span class="token punctuation">[</span>idxTest<span class="token punctuation">]</span>
+    ytrain<span class="token punctuation">,</span> ytest <span class="token operator">=</span> y<span class="token punctuation">[</span>idxTrain<span class="token punctuation">]</span><span class="token punctuation">,</span> y<span class="token punctuation">[</span>idxTest<span class="token punctuation">]</span>
+    
+    <span class="token comment"># TF-IDF Vectorizor</span>
+    Xtrain <span class="token operator">=</span> vectorizer<span class="token punctuation">.</span>fit_transform<span class="token punctuation">(</span>Xtrain<span class="token punctuation">)</span>
+    Xtest <span class="token operator">=</span> vectorizer<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>Xtest<span class="token punctuation">)</span>
+    
+    <span class="token comment"># Check Accuracy</span>
+    model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>Xtrain<span class="token punctuation">,</span> ytrain<span class="token punctuation">)</span>
+    ypred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>Xtest<span class="token punctuation">)</span>
+    accuracy<span class="token punctuation">.</span>append<span class="token punctuation">(</span>accuracy_score<span class="token punctuation">(</span>ytest<span class="token punctuation">,</span> ypred<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Add to confusion matrix</span>
+    confusion <span class="token operator">=</span> confusion_matrix<span class="token punctuation">(</span>ytest<span class="token punctuation">,</span> ypred<span class="token punctuation">,</span> labels<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'religion'</span><span class="token punctuation">,</span> <span class="token string">'age'</span><span class="token punctuation">,</span> <span class="token string">'ethnicity'</span><span class="token punctuation">,</span> <span class="token string">'gender'</span><span class="token punctuation">,</span> <span class="token string">'other_cyberbullying'</span><span class="token punctuation">,</span> <span class="token string">'not_cyberbullying'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    conf_mat <span class="token operator">=</span> add_to_confusion<span class="token punctuation">(</span>conf_mat<span class="token punctuation">,</span> confusion<span class="token punctuation">)</span>
+
+print_confusion_matrix<span class="token punctuation">(</span>conf_mat<span class="token punctuation">)</span>    
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Average Accuracy: '</span><span class="token punctuation">,</span> np<span class="token punctuation">.</span>mean<span class="token punctuation">(</span>accuracy<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+<h2 id="accuracy-1">Accuracy</h2>
+<p>Below are the accuracies for each embedding technique and model combination for the multiclass classification problem. The accuracy represents the percentage of time that the correct class was predicted by the model.</p>
+
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>TF-IDF Accuracy</th>
+<th>Word2Vec Accuracy</th>
+<th>CBOW fastText Accuracy</th>
+<th>Skip-Gram fastText Accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>K-Nearest Neighbors</td>
+<td>27.00%</td>
+<td>16.85%</td>
+<td>70.61%</td>
+<td><strong>74.35%</strong></td>
+</tr>
+<tr>
+<td>Logistic Regression</td>
+<td><strong>80.92%</strong></td>
+<td>72.88%</td>
+<td>72.64%</td>
+<td>76.12%</td>
+</tr>
+<tr>
+<td>Random Forest</td>
+<td><strong>80.67%</strong></td>
+<td>74.41%</td>
+<td>72.74%</td>
+<td>76.59%</td>
+</tr>
+<tr>
+<td>Support Vector Machine</td>
+<td>16.85%</td>
+<td>69.22%</td>
+<td>71.06%</td>
+<td><strong>74.88%</strong></td>
+</tr>
+</tbody>
+</table><p>Similar to the binary classification results, the TF-IDF and skip-gram fastText embedding methods are performing the best. Interestingly, it is the Logistic Regression and Random Forest that perform well with the TF-IDF model, just like the binary case. As a whole, the accuracies are slightly lower than the binary case, but this makes sense as randomly guessing only leads to an accuracy of roughly 16%, instead of 83%. It is still important to look at the confusion matrices to truly understand the effectiveness of each model, and what errors they may be making.</p>
+<h2 id="confusion-matrices-1">Confusion Matrices</h2>
+<p><strong>To avoid crowding this page, I have placed all the multiclass confusion matrices in the <code>Whitney_Multiclass_Confusion_Matrices</code> file</strong>.</p>
+<p>There was still one case where the Support Vector Machine guessed the majorirty class every time, but this was only with the TF-IDF embedding and did not happen with any other embedding. Overall, there was much more success with accurate classifications than the binary classification problem, despite having 6 classes instead of 2. In general, the models were extremely effective at classifying the 4 specific cyberbullying categories (religion, age, ethnicity, and gender) but struggled to differentiate between ‘other cyberbullying’ and ‘not cyberbullying’. This suggests that the more specific and concrete a category is, the easier it will likely be to classify and distinguish from others. It is more difficult to  pick out which word embedding performed the best, but i would argue the <strong>fastText models were the most effective across the board, but TF-IDF can have success in conjunction with specific models such as Logistic Regression and Random Forest</strong>.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>Logistic Regression is one of the most basic classification algorithms developed, but it was also equally or more effective than every other method used in this research. I think this helps showcase the importance of word embeddings a preprocessing when working with text data. The word embedding algorithm (TF-IDF vs Word2Vec vs fastText) had a much larger effect on the classification success than the choice of model itself. No matter how good the classification algorithm is, a poor preprocessing and embedding process will greatly limit how successful the classifications can be.</p>
+<p>The binary classification problem seemed to confuse the models more than the multiclass classification problem. I think combining the distinct cyberbullying classes into one master cyberbullying class made it too broad and extremely difficult for the model to identify patterns in the data that weren’t present in the non-cyberbullying observations. I thin fixing the class imbalance issue would slightly improve results, but keeping the classes separate and treating it as a multiclass classification problem is likely the best path forward.</p>
+<p>The goal of this research was to identify whether these methods may have a future as real-time text classifiers to stop cyberbullying messages from being sent to victims. While there is substantial work that needs to be done on top of this research, <strong>I believe with enough training data, which is often present on social media sites, these models could be used to classify specific types of cyberbullying (e.g., religion, age, ethnicity, and gender) in real-time and help prevent cyberbullying before it starts</strong>.</p>
+<h1 id="acknowledgements">Acknowledgements</h1>
+<p>J. Wang, K. Fu, C.T. Lu, “<a href="https://ieeexplore.ieee.org/document/9378065">SOSNet: A Graph Convolutional Network Approach to Fine-Grained Cyberbullying Detection</a>,” Proceedings of the 2020 IEEE International Conference on Big Data (IEEE BigData 2020), December 10-13, 2020.</p>
+</div>
+</body>
+
+</html>
